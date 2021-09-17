@@ -6,8 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class ImDayApiApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(ImDayApiApplication.class, args);
-    }
-
+  public static void main(String[] args) {
+    SpringApplication.run(ImDayApiApplication.class, args);
+  }
 }
