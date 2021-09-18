@@ -16,4 +16,8 @@ public class ScheduleService {
   public Optional<User> getLastScheduledUser() {
     return scheduleRepository.getLastScheduledUser();
   }
+
+  public Optional<User> getNextUserToBeScheduled() {
+    return scheduleRepository.getNextUserToBeScheduled();
+  }
 }

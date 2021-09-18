@@ -13,10 +13,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@NamedNativeQuery(
-    name = "Schedule.getLastScheduledUser",
-    query = "SELECT u.* FROM users u JOIN schedule s USING(id) ORDER BY s.id DESC LIMIT 1",
-    resultClass = User.class)
 public class Schedule {
 
   @Id

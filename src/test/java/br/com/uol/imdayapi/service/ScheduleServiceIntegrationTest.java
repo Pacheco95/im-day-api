@@ -57,6 +57,15 @@ class ScheduleServiceIntegrationTest {
     assertThat(actualLastScheduledUser).hasValue(expectedLastScheduledUser);
   }
 
+  @Test
+  void getNextUserToBeScheduledShouldReturnEmptyOptionalIfNoUsersInDatabase() {
+    entityManager.clear();
+
+    final Optional<User> actualNextUserToBeScheduled = scheduleService.getNextUserToBeScheduled();
+
+    assertThat(actualNextUserToBeScheduled).isEmpty();
+  }
+
   private List<User> generateUsersList(int count) {
     return IntStream.rangeClosed(1, count)
         .boxed()
