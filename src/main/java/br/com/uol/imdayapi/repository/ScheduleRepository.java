@@ -10,6 +10,6 @@ import java.util.Optional;
 
 @Repository
 public interface ScheduleRepository extends JpaRepository<Schedule, Integer> {
-  @Query(name = "Schedule.getLastScheduledUser", nativeQuery = true)
+  @Query(name = "Schedule.getLastScheduledUser")
   Optional<User> getLastScheduledUser();
 }
