@@ -34,7 +34,11 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
 
   @Override
   public Optional<User> getNextUserToBeScheduled() {
-    return Optional.empty();
+    final List<User> result =
+        jdbcTemplate.query(
+            "SELECT * FROM users ORDER BY id LIMIT 1", new BeanPropertyRowMapper<>(User.class));
+
+    return Optional.ofNullable(DataAccessUtils.singleResult(result));
   }
 
   @Autowired

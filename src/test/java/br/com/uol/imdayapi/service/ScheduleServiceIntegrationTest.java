@@ -66,6 +66,19 @@ class ScheduleServiceIntegrationTest {
     assertThat(actualNextUserToBeScheduled).isEmpty();
   }
 
+  @Test
+  void getNextUserToBeScheduledShouldReturnTheFirstCreatedUserIfNoScheduledUsersYet() {
+    final List<User> users = generateUsersList(3);
+
+    users.forEach(entityManager::persist);
+
+    final User firstCreatedUser = users.get(0);
+
+    final Optional<User> actualNextUserToBeScheduled = scheduleService.getNextUserToBeScheduled();
+
+    assertThat(actualNextUserToBeScheduled).hasValue(firstCreatedUser);
+  }
+
   private List<User> generateUsersList(int count) {
     return IntStream.rangeClosed(1, count)
         .boxed()
