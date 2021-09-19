@@ -36,11 +36,7 @@ public class ScheduleService {
       return false;
     }
 
-    if (isLastScheduleDateToday(optionalLastSchedule)) {
-      return false;
-    }
-
-    return false;
+    return !isLastScheduleDateToday(optionalLastSchedule);
   }
 
   private boolean isLastScheduleDateToday(Optional<Schedule> optionalLastSchedule) {
