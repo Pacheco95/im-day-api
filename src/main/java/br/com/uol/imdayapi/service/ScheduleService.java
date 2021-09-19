@@ -22,6 +22,15 @@ public class ScheduleService {
   }
 
   public boolean canScheduleNextUser() {
+    final Optional<User> nextUserToBeScheduled = getNextUserToBeScheduled();
+
+    final boolean isDatabaseEmpty =
+        getLastScheduledUser().isEmpty() && nextUserToBeScheduled.isEmpty();
+
+    if (isDatabaseEmpty) {
+      return false;
+    }
+
     return false;
   }
 }
