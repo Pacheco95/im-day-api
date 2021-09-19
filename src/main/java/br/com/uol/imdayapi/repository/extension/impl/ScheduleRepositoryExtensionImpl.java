@@ -1,11 +1,15 @@
 package br.com.uol.imdayapi.repository.extension.impl;
 
+import br.com.uol.imdayapi.model.Schedule;
 import br.com.uol.imdayapi.model.User;
 import br.com.uol.imdayapi.repository.ScheduleRepository;
 import br.com.uol.imdayapi.repository.extension.ScheduleRepositoryExtension;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.support.DataAccessUtils;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -17,19 +21,27 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtension {
 
-  // Same as 'this'
-  private ScheduleRepository repository;
+  private ScheduleRepository scheduleRepository;
 
   private final JdbcTemplate jdbcTemplate;
 
   @Override
   public Optional<User> getLastScheduledUser() {
-    final List<User> result =
-        jdbcTemplate.query(
-            "SELECT u.* FROM users u JOIN schedule s USING(id) ORDER BY s.id DESC LIMIT 1",
-            new BeanPropertyRowMapper<>(User.class));
+    final Optional<Schedule> lastSchedule = this.getLastSchedule();
 
-    return Optional.ofNullable(DataAccessUtils.singleResult(result));
+    if (lastSchedule.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(lastSchedule.get().getUser());
+  }
+
+  @Override
+  public Optional<Schedule> getLastSchedule() {
+    return scheduleRepository
+        .findAll(PageRequest.of(0, 1, Sort.by(Schedule.Fields.scheduledAt).descending()))
+        .stream()
+        .findFirst();
   }
 
   @Override
@@ -42,7 +54,8 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
   }
 
   @Autowired
-  public void setRepository(ScheduleRepository repository) {
-    this.repository = repository;
+  @Lazy
+  public void setScheduleRepository(ScheduleRepository scheduleRepository) {
+    this.scheduleRepository = scheduleRepository;
   }
 }
