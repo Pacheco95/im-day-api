@@ -91,6 +91,11 @@ class ScheduleServiceIntegrationTest {
     assertThat(canBeScheduled).isFalse();
   }
 
+  @Test
+  void canScheduleNextUserShouldReturnFalseIfDatabaseIsEmpty() {
+    assertThat(scheduleService.canScheduleNextUser()).isFalse();
+  }
+
   private List<User> generateUsersList(int count) {
     return IntStream.rangeClosed(1, count)
         .boxed()
