@@ -20,4 +20,8 @@ public class ScheduleService {
   public Optional<User> getNextUserToBeScheduled() {
     return scheduleRepository.getNextUserToBeScheduled();
   }
+
+  public boolean canScheduleNextUser() {
+    return false;
+  }
 }

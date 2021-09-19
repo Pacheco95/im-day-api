@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ScheduleServiceIntegrationTest {
 
   @Autowired private TestEntityManager entityManager;
@@ -30,13 +32,10 @@ class ScheduleServiceIntegrationTest {
   @BeforeEach
   void setUp() {
     scheduleService = new ScheduleService(scheduleRepository);
-    entityManager.clear();
   }
 
   @Test
   void getLastScheduledUserShouldReturnEmptyOptionalOnEmptyDatabase() {
-    entityManager.clear();
-
     final Optional<User> lastScheduledUser = scheduleService.getLastScheduledUser();
 
     assertThat(lastScheduledUser).isNotPresent();
@@ -59,8 +58,6 @@ class ScheduleServiceIntegrationTest {
 
   @Test
   void getNextUserToBeScheduledShouldReturnEmptyOptionalIfNoUsersInDatabase() {
-    entityManager.clear();
-
     final Optional<User> actualNextUserToBeScheduled = scheduleService.getNextUserToBeScheduled();
 
     assertThat(actualNextUserToBeScheduled).isEmpty();
@@ -77,6 +74,21 @@ class ScheduleServiceIntegrationTest {
     final Optional<User> actualNextUserToBeScheduled = scheduleService.getNextUserToBeScheduled();
 
     assertThat(actualNextUserToBeScheduled).hasValue(firstCreatedUser);
+  }
+
+  @Test
+  void canScheduleNextUserShouldReturnFalseIfThereWasAlreadyAScheduledUserToday() {
+    final List<User> users = generateUsersList(1);
+
+    users.forEach(entityManager::persist);
+
+    final Schedule currentScheduledUser = asScheduleRegistry(users.get(0));
+
+    entityManager.persist(currentScheduledUser);
+
+    final boolean canBeScheduled = scheduleService.canScheduleNextUser();
+
+    assertThat(canBeScheduled).isFalse();
   }
 
   private List<User> generateUsersList(int count) {
