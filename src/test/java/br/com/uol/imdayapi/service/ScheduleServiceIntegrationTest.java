@@ -150,6 +150,21 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.scheduleNextUser()).isEmpty();
   }
 
+  @Test
+  void scheduleNextUserShouldScheduleTheSameUserAsBeforeIfOnlyOneUserInDatabase() {
+    goToPointInTime(startOfYesterday());
+
+    final User user = generateUsersList(1).get(0);
+
+    entityManager.persist(user);
+
+    entityManager.persist(asScheduleRegistry(user, clock));
+
+    goToPointInTime(startOfToday());
+
+    assertThat(scheduleService.scheduleNextUser()).map(Schedule::getUser).hasValue(user);
+  }
+
   private Instant startOfToday() {
     return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
