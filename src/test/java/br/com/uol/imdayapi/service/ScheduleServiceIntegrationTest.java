@@ -123,6 +123,11 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.canScheduleNextUser()).isTrue();
   }
 
+  @Test
+  void scheduleNextUserShouldReturnEmptyOptionalIfNoUsersToSchedule() {
+    assertThat(scheduleService.scheduleNextUser()).isEmpty();
+  }
+
   private Instant startOfToday() {
     return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
   }

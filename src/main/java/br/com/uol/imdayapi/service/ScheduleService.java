@@ -48,4 +48,8 @@ public class ScheduleService {
 
     return LocalDate.now(clock).equals(lastScheduleDate);
   }
+
+  public Optional<Schedule> scheduleNextUser() {
+    return Optional.empty();
+  }
 }
