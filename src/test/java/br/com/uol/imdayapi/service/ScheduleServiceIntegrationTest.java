@@ -137,6 +137,19 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.scheduleNextUser()).map(Schedule::getUser).hasValue(users.get(0));
   }
 
+  @Test
+  void scheduleNextUserShouldReturnEmptyOptionalIfTodayScheduleIsAlreadyDone() {
+    goToPointInTime(startOfToday());
+
+    final List<User> users = generateUsersList(3);
+
+    users.forEach(entityManager::persist);
+
+    entityManager.persist(asScheduleRegistry(users.get(0), clock));
+
+    assertThat(scheduleService.scheduleNextUser()).isEmpty();
+  }
+
   private Instant startOfToday() {
     return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
