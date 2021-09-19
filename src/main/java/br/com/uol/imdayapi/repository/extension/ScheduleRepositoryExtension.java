@@ -11,4 +11,6 @@ public interface ScheduleRepositoryExtension {
   Optional<Schedule> getLastSchedule();
 
   Optional<User> getNextUserToBeScheduled();
+
+  Optional<Schedule> scheduleNextUser();
 }

@@ -50,6 +50,6 @@ public class ScheduleService {
   }
 
   public Optional<Schedule> scheduleNextUser() {
-    return Optional.empty();
+    return scheduleRepository.scheduleNextUser();
   }
 }
