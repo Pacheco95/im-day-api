@@ -128,6 +128,15 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.scheduleNextUser()).isEmpty();
   }
 
+  @Test
+  void scheduleNextUserShouldScheduleTheFirstUserInUsersTableIfNoPreviousSchedules() {
+    final List<User> users = generateUsersList(3);
+
+    users.forEach(entityManager::persist);
+
+    assertThat(scheduleService.scheduleNextUser()).map(Schedule::getUser).hasValue(users.get(0));
+  }
+
   private Instant startOfToday() {
     return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
