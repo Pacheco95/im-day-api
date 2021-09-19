@@ -81,6 +81,11 @@ class ScheduleServiceIntegrationTest {
   }
 
   @Test
+  void canScheduleNextUserShouldReturnFalseIfDatabaseIsEmpty() {
+    assertThat(scheduleService.canScheduleNextUser()).isFalse();
+  }
+
+  @Test
   void canScheduleNextUserShouldReturnFalseIfThereWasAlreadyAScheduledUserToday() {
     final List<User> users = generateUsersList(1);
 
@@ -93,11 +98,6 @@ class ScheduleServiceIntegrationTest {
     final boolean canBeScheduled = scheduleService.canScheduleNextUser();
 
     assertThat(canBeScheduled).isFalse();
-  }
-
-  @Test
-  void canScheduleNextUserShouldReturnFalseIfDatabaseIsEmpty() {
-    assertThat(scheduleService.canScheduleNextUser()).isFalse();
   }
 
   private List<User> generateUsersList(int count) {
