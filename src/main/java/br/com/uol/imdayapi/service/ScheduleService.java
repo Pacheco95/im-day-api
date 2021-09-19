@@ -36,20 +36,26 @@ public class ScheduleService {
       return false;
     }
 
-    return !isLastScheduleDateToday(optionalLastSchedule);
-  }
+    final boolean isFirstSchedule = optionalLastSchedule.isEmpty();
 
-  private boolean isLastScheduleDateToday(Optional<Schedule> optionalLastSchedule) {
-    if (optionalLastSchedule.isEmpty()) {
-      return false;
+    if (isFirstSchedule) {
+      return true;
     }
 
-    final LocalDate lastScheduleDate = optionalLastSchedule.get().getScheduledAt().toLocalDate();
+    return !isLastScheduleDateToday(optionalLastSchedule.get());
+  }
+
+  private boolean isLastScheduleDateToday(Schedule optionalLastSchedule) {
+    final LocalDate lastScheduleDate = optionalLastSchedule.getScheduledAt().toLocalDate();
 
     return LocalDate.now(clock).equals(lastScheduleDate);
   }
 
   public Optional<Schedule> scheduleNextUser() {
+    if (!canScheduleNextUser()) {
+      return Optional.empty();
+    }
+
     return scheduleRepository.scheduleNextUser();
   }
 }
