@@ -4,6 +4,7 @@ import br.com.uol.imdayapi.config.ClockConfiguration;
 import br.com.uol.imdayapi.model.Schedule;
 import br.com.uol.imdayapi.model.User;
 import br.com.uol.imdayapi.repository.ScheduleRepository;
+import br.com.uol.imdayapi.utils.DateTimeUtils;
 import com.google.common.collect.Iterables;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static br.com.uol.imdayapi.utils.DateTimeUtils.getDateRange;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -183,6 +185,23 @@ class ScheduleServiceIntegrationTest {
   @Test
   void getRecentScheduledUsersShouldReturnAListOf11Elements() {
     assertThat(scheduleService.getRecentScheduledUsers().size()).isEqualTo(11);
+  }
+
+  @Test
+  void getRecentScheduledUsersShouldReturnAListWithEmptyValuesForDaysCorrespondingToWeekends() {
+    final LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
+
+    final List<Boolean> weekendsBool =
+        getDateRange(yesterday, 11)
+            .map(DateTimeUtils::isWeekend)
+            .collect(Collectors.toUnmodifiableList());
+
+    final List<Boolean> scheduledUsersBool =
+        scheduleService.getRecentScheduledUsers().stream()
+            .map(Optional::isEmpty)
+            .collect(Collectors.toUnmodifiableList());
+
+    assertThat(weekendsBool).isEqualTo(scheduledUsersBool);
   }
 
   private Instant startOfToday() {
