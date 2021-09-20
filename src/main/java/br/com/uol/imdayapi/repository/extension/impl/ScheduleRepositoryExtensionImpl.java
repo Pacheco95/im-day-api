@@ -18,6 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static br.com.uol.imdayapi.utils.DateTimeUtils.getDateRange;
 import static br.com.uol.imdayapi.utils.DateTimeUtils.isWeekend;
@@ -29,6 +30,7 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
   private final UserRepository userRepository;
   private final JdbcTemplate jdbcTemplate;
   private final Clock clock;
+  private static final int SCHEDULES_COUNT = 11;
   private ScheduleRepository scheduleRepository;
 
   @Override
@@ -106,6 +108,12 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
 
   @Override
   public List<Optional<User>> getRecentScheduledUsers() {
+    if (userRepository.getFirstCreatedUser().isEmpty()) {
+      return IntStream.range(0, SCHEDULES_COUNT)
+          .mapToObj(ignored -> Optional.<User>empty())
+          .collect(Collectors.toUnmodifiableList());
+    }
+
     LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
 
     return getDateRange(yesterday, 11)
