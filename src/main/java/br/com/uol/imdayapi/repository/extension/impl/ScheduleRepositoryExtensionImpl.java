@@ -13,7 +13,10 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Repository
 @RequiredArgsConstructor
@@ -95,6 +98,13 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
             .user(nextUserToBeScheduled)
             .scheduledAt(LocalDateTime.now(clock))
             .build());
+  }
+
+  @Override
+  public List<User> getRecentScheduledUsers() {
+    return IntStream.rangeClosed(1, 11)
+        .mapToObj(i -> User.builder().build())
+        .collect(Collectors.toUnmodifiableList());
   }
 
   @Autowired
