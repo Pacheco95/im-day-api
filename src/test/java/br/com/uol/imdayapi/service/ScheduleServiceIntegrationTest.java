@@ -7,7 +7,9 @@ import br.com.uol.imdayapi.repository.ScheduleRepository;
 import br.com.uol.imdayapi.utils.DateTimeUtils;
 import com.google.common.collect.Iterables;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -30,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 @Import(ClockConfiguration.class)
+@TestMethodOrder(MethodOrderer.MethodName.class)
 class ScheduleServiceIntegrationTest {
 
   @MockBean private Clock clock;
@@ -188,7 +191,14 @@ class ScheduleServiceIntegrationTest {
   }
 
   @Test
+  void getRecentScheduledUsersShouldReturnAListWithAllValuesEmptyIfEmptyDatabase() {
+    assertThat(scheduleService.getRecentScheduledUsers()).allMatch(Optional::isEmpty);
+  }
+
+  @Test
   void getRecentScheduledUsersShouldReturnAListWithEmptyValuesForDaysCorrespondingToWeekends() {
+    entityManager.persist(new User());
+
     final LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
 
     final List<Boolean> weekendsBool =
