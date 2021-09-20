@@ -19,11 +19,10 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtension {
 
-  private ScheduleRepository scheduleRepository;
   private final UserRepository userRepository;
-
   private final JdbcTemplate jdbcTemplate;
   private final Clock clock;
+  private ScheduleRepository scheduleRepository;
 
   @Override
   public Optional<User> getLastScheduledUser() {
