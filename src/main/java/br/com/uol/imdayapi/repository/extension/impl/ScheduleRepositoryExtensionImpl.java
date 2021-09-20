@@ -3,20 +3,16 @@ package br.com.uol.imdayapi.repository.extension.impl;
 import br.com.uol.imdayapi.model.Schedule;
 import br.com.uol.imdayapi.model.User;
 import br.com.uol.imdayapi.repository.ScheduleRepository;
+import br.com.uol.imdayapi.repository.UserRepository;
 import br.com.uol.imdayapi.repository.extension.ScheduleRepositoryExtension;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.dao.support.DataAccessUtils;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,6 +20,7 @@ import java.util.Optional;
 public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtension {
 
   private ScheduleRepository scheduleRepository;
+  private final UserRepository userRepository;
 
   private final JdbcTemplate jdbcTemplate;
   private final Clock clock;
@@ -41,37 +38,69 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
 
   @Override
   public Optional<Schedule> getLastSchedule() {
-    return scheduleRepository
-        .findAll(PageRequest.of(0, 1, Sort.by(Schedule.Fields.scheduledAt).descending()))
-        .stream()
-        .findFirst();
+    return scheduleRepository.findFirstByOrderByScheduledAtDesc();
   }
 
   @Override
   public Optional<User> getNextUserToBeScheduled() {
-    final List<User> result =
-        jdbcTemplate.query(
-            "SELECT * FROM users ORDER BY id LIMIT 1", new BeanPropertyRowMapper<>(User.class));
+    final Optional<Schedule> optionalLastSchedule = scheduleRepository.getLastSchedule();
+    final Optional<User> optionalFirstCreatedUser = userRepository.getFirstCreatedUser();
 
-    return Optional.ofNullable(DataAccessUtils.singleResult(result));
-  }
+    final boolean isDatabaseEmpty =
+        optionalLastSchedule.isEmpty() && optionalFirstCreatedUser.isEmpty();
 
-  @Override
-  public Optional<Schedule> scheduleNextUser() {
-    final Optional<User> optionalNextUserToBeScheduled = getNextUserToBeScheduled();
-
-    if (optionalNextUserToBeScheduled.isEmpty()) {
+    if (isDatabaseEmpty) {
       return Optional.empty();
     }
 
-    final Schedule nextSchedule =
-        scheduleRepository.save(
-            Schedule.builder()
-                .user(optionalNextUserToBeScheduled.get())
-                .scheduledAt(LocalDateTime.now(clock))
-                .build());
+    final boolean isTheFirstSchedule = optionalLastSchedule.isEmpty();
 
-    return Optional.of(nextSchedule);
+    if (isTheFirstSchedule) {
+      return optionalFirstCreatedUser;
+    }
+
+    final Optional<Integer> nextUserIdToBeScheduled = getNextUserIdToBeScheduled();
+
+    if (nextUserIdToBeScheduled.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(userRepository.getById(nextUserIdToBeScheduled.get()));
+  }
+
+  private Optional<Integer> getNextUserIdToBeScheduled() {
+    final String query =
+        "WITH scheduled_user AS (\n"
+            + "    SELECT user_id\n"
+            + "    FROM schedule\n"
+            + "    ORDER BY scheduled_at DESC\n"
+            + "    LIMIT 1\n"
+            + "),\n"
+            + "     last_user AS (\n"
+            + "         SELECT id\n"
+            + "         FROM users\n"
+            + "         ORDER BY id DESC\n"
+            + "         LIMIT 1\n"
+            + "     )\n"
+            + "SELECT CASE\n"
+            + "           WHEN ((SELECT user_id FROM scheduled_user) = (SELECT id FROM last_user))\n"
+            + "               THEN (SELECT id FROM users ORDER BY id LIMIT 1)\n"
+            + "           ELSE (SELECT user_id_to_be_scheduled\n"
+            + "                 FROM (SELECT u.id AS user_id_to_be_scheduled\n"
+            + "                       FROM users u\n"
+            + "                       WHERE u.id > (SELECT user_id FROM scheduled_user)\n"
+            + "                       LIMIT 1) AS suilui) END;";
+
+    return jdbcTemplate.queryForList(query, Integer.class).stream().findFirst();
+  }
+
+  @Override
+  public Schedule scheduleUser(User nextUserToBeScheduled) {
+    return scheduleRepository.save(
+        Schedule.builder()
+            .user(nextUserToBeScheduled)
+            .scheduledAt(LocalDateTime.now(clock))
+            .build());
   }
 
   @Autowired

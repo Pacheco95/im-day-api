@@ -26,15 +26,7 @@ public class ScheduleService {
   }
 
   public boolean canScheduleNextUser() {
-    final Optional<User> optionalNextUserToBeScheduled = getNextUserToBeScheduled();
     final Optional<Schedule> optionalLastSchedule = scheduleRepository.getLastSchedule();
-
-    final boolean isDatabaseEmpty =
-        optionalLastSchedule.isEmpty() && optionalNextUserToBeScheduled.isEmpty();
-
-    if (isDatabaseEmpty) {
-      return false;
-    }
 
     final boolean isFirstSchedule = optionalLastSchedule.isEmpty();
 
@@ -52,10 +44,18 @@ public class ScheduleService {
   }
 
   public Optional<Schedule> scheduleNextUser() {
+    final Optional<User> optionalNextUserToBeScheduled = getNextUserToBeScheduled();
+
+    if (optionalNextUserToBeScheduled.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final User nextUserToBeScheduled = optionalNextUserToBeScheduled.get();
+
     if (!canScheduleNextUser()) {
       return Optional.empty();
     }
 
-    return scheduleRepository.scheduleNextUser();
+    return Optional.of(scheduleRepository.scheduleUser(nextUserToBeScheduled));
   }
 }
