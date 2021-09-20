@@ -60,7 +60,7 @@ public class ScheduleService {
     return Optional.of(scheduleRepository.scheduleUser(nextUserToBeScheduled));
   }
 
-  public List<User> getRecentScheduledUsers() {
+  public List<Optional<User>> getRecentScheduledUsers() {
     return scheduleRepository.getRecentScheduledUsers();
   }
 }

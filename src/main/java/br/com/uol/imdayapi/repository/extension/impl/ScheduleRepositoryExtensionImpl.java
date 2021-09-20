@@ -12,11 +12,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+
+import static br.com.uol.imdayapi.utils.DateTimeUtils.getDateRange;
+import static br.com.uol.imdayapi.utils.DateTimeUtils.isWeekend;
 
 @Repository
 @RequiredArgsConstructor
@@ -101,9 +105,11 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
   }
 
   @Override
-  public List<User> getRecentScheduledUsers() {
-    return IntStream.rangeClosed(1, 11)
-        .mapToObj(i -> User.builder().build())
+  public List<Optional<User>> getRecentScheduledUsers() {
+    LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
+
+    return getDateRange(yesterday, 11)
+        .map(date -> Optional.ofNullable(isWeekend(date) ? null : new User()))
         .collect(Collectors.toUnmodifiableList());
   }
 
