@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -84,11 +85,6 @@ class ScheduleServiceIntegrationTest {
     final Optional<User> actualNextUserToBeScheduled = scheduleService.getNextUserToBeScheduled();
 
     assertThat(actualNextUserToBeScheduled).hasValue(firstCreatedUser);
-  }
-
-  @Test
-  void canScheduleNextUserShouldReturnFalseIfDatabaseIsEmpty() {
-    assertThat(scheduleService.canScheduleNextUser()).isFalse();
   }
 
   @Test
@@ -163,6 +159,25 @@ class ScheduleServiceIntegrationTest {
     goToPointInTime(startOfToday());
 
     assertThat(scheduleService.scheduleNextUser()).map(Schedule::getUser).hasValue(user);
+  }
+
+  @Test
+  void
+      whenCurrentScheduledUserIsNotTheLastDatabaseUser_Then_ScheduleNextUser_ShouldScheduleTheNextUserWhoseIdIsTheLowestIdGreaterThanTheCurrentScheduledUserId() {
+    goToPointInTime(startOfYesterday());
+
+    final User currentScheduledUser = User.builder().name("User 1").build();
+    final User expectedNextScheduledUser = User.builder().name("User 2").build();
+
+    Stream.of(currentScheduledUser, expectedNextScheduledUser).forEach(entityManager::persist);
+
+    entityManager.persist(asScheduleRegistry(currentScheduledUser, clock));
+
+    goToPointInTime(startOfToday());
+
+    assertThat(scheduleService.scheduleNextUser())
+        .map(Schedule::getUser)
+        .hasValue(expectedNextScheduledUser);
   }
 
   private Instant startOfToday() {
