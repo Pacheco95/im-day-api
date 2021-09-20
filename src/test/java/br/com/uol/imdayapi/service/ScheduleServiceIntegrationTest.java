@@ -180,6 +180,11 @@ class ScheduleServiceIntegrationTest {
         .hasValue(expectedNextScheduledUser);
   }
 
+  @Test
+  void getRecentScheduledUsersShouldReturnAListOf11Elements() {
+    assertThat(scheduleService.getRecentScheduledUsers().size()).isEqualTo(11);
+  }
+
   private Instant startOfToday() {
     return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
