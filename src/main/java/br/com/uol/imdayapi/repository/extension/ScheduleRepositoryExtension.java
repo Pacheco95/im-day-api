@@ -8,8 +8,6 @@ import java.util.Optional;
 public interface ScheduleRepositoryExtension {
   Optional<User> getLastScheduledUser();
 
-  Optional<Schedule> getLastSchedule();
-
   Optional<User> getNextUserToBeScheduled();
 
   Schedule scheduleUser(User nextUserToBeScheduled);

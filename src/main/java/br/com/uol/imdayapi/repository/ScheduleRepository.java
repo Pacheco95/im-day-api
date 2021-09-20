@@ -11,4 +11,8 @@ import java.util.Optional;
 public interface ScheduleRepository
     extends JpaRepository<Schedule, Integer>, ScheduleRepositoryExtension {
   Optional<Schedule> findFirstByOrderByScheduledAtDesc();
+
+  default Optional<Schedule> getLastSchedule() {
+    return findFirstByOrderByScheduledAtDesc();
+  }
 }

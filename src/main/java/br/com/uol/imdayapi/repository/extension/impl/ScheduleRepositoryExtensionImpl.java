@@ -27,18 +27,13 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
 
   @Override
   public Optional<User> getLastScheduledUser() {
-    final Optional<Schedule> lastSchedule = this.getLastSchedule();
+    final Optional<Schedule> lastSchedule = scheduleRepository.getLastSchedule();
 
     if (lastSchedule.isEmpty()) {
       return Optional.empty();
     }
 
     return Optional.of(lastSchedule.get().getUser());
-  }
-
-  @Override
-  public Optional<Schedule> getLastSchedule() {
-    return scheduleRepository.findFirstByOrderByScheduledAtDesc();
   }
 
   @Override
