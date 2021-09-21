@@ -212,12 +212,15 @@ class ScheduleServiceIntegrationTest {
             .map(DateTimeUtils::isWeekend)
             .collect(Collectors.toUnmodifiableList());
 
-    final List<Boolean> scheduledUsersBool =
-        scheduleService.getRecentScheduledUsers().stream()
-            .map(Optional::isEmpty)
-            .collect(Collectors.toUnmodifiableList());
+    final List<Optional<User>> recentScheduledUsers = scheduleService.getRecentScheduledUsers();
 
-    assertThat(weekendsBool).isEqualTo(scheduledUsersBool);
+    IntStream.range(0, recentScheduledUsers.size())
+        .forEach(
+            index -> {
+              if (weekendsBool.get(index)) {
+                assertThat(recentScheduledUsers.get(index)).isEmpty();
+              }
+            });
   }
 
   @Test
@@ -229,7 +232,14 @@ class ScheduleServiceIntegrationTest {
 
     final List<Optional<User>> expectedRecentScheduledUsers =
         getDateRange(yesterday(), 11)
-            .map(date -> Optional.ofNullable(isWeekend(date) ? null : luckyUser))
+            .map(
+                date -> {
+                  if (date.equals(yesterday())) {
+                    return Optional.<User>empty();
+                  }
+
+                  return Optional.ofNullable(isWeekend(date) ? null : luckyUser);
+                })
             .collect(Collectors.toUnmodifiableList());
 
     assertThat(scheduleService.getRecentScheduledUsers()).isEqualTo(expectedRecentScheduledUsers);
@@ -255,6 +265,7 @@ class ScheduleServiceIntegrationTest {
   void
       givenNoPreviousSchedulesAndMoreThanOneUserInDatabase_thenGetRecentScheduledUsersShouldCycleUsersInWeekdaysExceptYesterday(
           DayOfWeek dayOfWeek) {
+    goToPointInTime(startOfYesterday());
 
     final LocalDate today = LocalDate.ofInstant(goToPointInTime(dayOfWeek), ZoneId.systemDefault());
 

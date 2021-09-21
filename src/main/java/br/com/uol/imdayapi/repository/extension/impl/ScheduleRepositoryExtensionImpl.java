@@ -5,9 +5,11 @@ import br.com.uol.imdayapi.model.User;
 import br.com.uol.imdayapi.repository.ScheduleRepository;
 import br.com.uol.imdayapi.repository.UserRepository;
 import br.com.uol.imdayapi.repository.extension.ScheduleRepositoryExtension;
+import com.google.common.collect.Iterators;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -118,8 +120,32 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
 
     LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
 
+    final List<User> all = userRepository.findAll(Sort.by(User.Fields.id));
+    final var cycle = Iterators.cycle(all);
+
+    final Optional<User> optionalLastScheduledUser = getLastScheduledUser();
+
+    if (optionalLastScheduledUser.isPresent()) {
+      final User lastScheduledUser = optionalLastScheduledUser.get();
+
+      while (!all.get(0).equals(lastScheduledUser)) {
+        cycle.next();
+      }
+    }
+
+    boolean shouldReturnYesterdayScheduleEmpty = optionalLastScheduledUser.isEmpty();
+
     return getDateRange(yesterday, 11)
-        .map(date -> Optional.ofNullable(isWeekend(date) ? null : optionalFirstCreatedUser.get()))
+        .map(
+            date -> {
+              if (isWeekend(date)) {
+                return Optional.<User>empty();
+              }
+              if (date.equals(yesterday) && shouldReturnYesterdayScheduleEmpty) {
+                return Optional.<User>empty();
+              }
+              return Optional.of(cycle.next());
+            })
         .collect(Collectors.toUnmodifiableList());
   }
 
