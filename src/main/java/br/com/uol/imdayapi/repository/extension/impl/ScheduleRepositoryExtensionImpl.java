@@ -108,7 +108,9 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
 
   @Override
   public List<Optional<User>> getRecentScheduledUsers() {
-    if (userRepository.getFirstCreatedUser().isEmpty()) {
+    final Optional<User> optionalFirstCreatedUser = userRepository.getFirstCreatedUser();
+
+    if (optionalFirstCreatedUser.isEmpty()) {
       return IntStream.range(0, SCHEDULES_COUNT)
           .mapToObj(ignored -> Optional.<User>empty())
           .collect(Collectors.toUnmodifiableList());
@@ -117,7 +119,7 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
     LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
 
     return getDateRange(yesterday, 11)
-        .map(date -> Optional.ofNullable(isWeekend(date) ? null : new User()))
+        .map(date -> Optional.ofNullable(isWeekend(date) ? null : optionalFirstCreatedUser.get()))
         .collect(Collectors.toUnmodifiableList());
   }
 
