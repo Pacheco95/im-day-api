@@ -16,7 +16,7 @@ public class UserScheduler {
   private final AtomicInteger count = new AtomicInteger(0);
   private final ScheduleService scheduleService;
 
-  @Scheduled(cron = "0 0 * * *")
+  @Scheduled(cron = "0 0 0 * * *")
   void scheduleNextUserAtTheStartOfNextDay() {
     count.incrementAndGet();
 
