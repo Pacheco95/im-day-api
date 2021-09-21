@@ -119,11 +119,11 @@ class ScheduleServiceIntegrationTest {
 
     users.forEach(entityManager::persist);
 
-    final Schedule currentScheduledUser = asScheduleRegistry(users.get(0), clock);
+    final Schedule currentScheduledUser = asScheduleRegistry(users.get(0));
 
     entityManager.persist(currentScheduledUser);
 
-    goToPointInTime(startOfToday());
+    goToPointInTime(startOfTodaySystem());
 
     assertThat(scheduleService.canScheduleNextUser()).isTrue();
   }
@@ -144,7 +144,7 @@ class ScheduleServiceIntegrationTest {
 
   @Test
   void scheduleNextUserShouldReturnEmptyOptionalIfTodayScheduleIsAlreadyDone() {
-    goToPointInTime(startOfToday());
+    goToPointInTime(startOfTodaySystem());
 
     final List<User> users = generateUsersList(3);
 
@@ -165,7 +165,7 @@ class ScheduleServiceIntegrationTest {
 
     entityManager.persist(asScheduleRegistry(user, clock));
 
-    goToPointInTime(startOfToday());
+    goToPointInTime(startOfTodaySystem());
 
     assertThat(scheduleService.scheduleNextUser()).map(Schedule::getUser).hasValue(user);
   }
@@ -182,7 +182,7 @@ class ScheduleServiceIntegrationTest {
 
     entityManager.persist(asScheduleRegistry(currentScheduledUser, clock));
 
-    goToPointInTime(startOfToday());
+    goToPointInTime(startOfTodaySystem());
 
     assertThat(scheduleService.scheduleNextUser())
         .map(Schedule::getUser)
@@ -203,10 +203,8 @@ class ScheduleServiceIntegrationTest {
   void getRecentScheduledUsersShouldReturnAListWithEmptyValuesForDaysCorrespondingToWeekends() {
     entityManager.persist(new User());
 
-    final LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
-
     final List<Boolean> weekendsBool =
-        getDateRange(yesterday, 11)
+        getDateRange(yesterday(), 11)
             .map(DateTimeUtils::isWeekend)
             .collect(Collectors.toUnmodifiableList());
 
@@ -225,10 +223,8 @@ class ScheduleServiceIntegrationTest {
 
     entityManager.persist(luckyUser);
 
-    final LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
-
     final List<Optional<User>> expectedRecentScheduledUsers =
-        getDateRange(yesterday, 11)
+        getDateRange(yesterday(), 11)
             .map(date -> Optional.ofNullable(isWeekend(date) ? null : luckyUser))
             .collect(Collectors.toUnmodifiableList());
 
@@ -250,15 +246,54 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.getRecentScheduledUsers().get(0)).hasValue(luckyUser);
   }
 
-  private Instant startOfToday() {
-    return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
+  private Instant startOfTodaySystem() {
+    return startOfToday(Clock.systemDefaultZone());
+  }
+
+  private Instant startOfToday(Clock clock) {
+    return LocalDate.now(clock).atStartOfDay(ZoneId.systemDefault()).toInstant();
+  }
+
+  private LocalDate yesterday() {
+    return yesterday(clock);
+  }
+
+  private LocalDate yesterday(Clock clock) {
+    return LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
   }
 
   private Instant startOfYesterday() {
-    return LocalDate.now()
-        .atStartOfDay(ZoneId.systemDefault())
-        .minus(1, ChronoUnit.DAYS)
-        .toInstant();
+    return startOfYesterday(clock);
+  }
+
+  private Instant startOfYesterday(Clock clock) {
+    return yesterday(clock).atStartOfDay(ZoneId.systemDefault()).toInstant();
+  }
+
+  private void goToPointInTime(DayOfWeek dayOfWeek) {
+    goToPointInTime(dayOfWeek, clock);
+  }
+
+  private void goToPointInTime(DayOfWeek dayOfWeek, Clock clock) {
+    goToPointInTime(next(dayOfWeek), clock);
+  }
+
+  private void goToPointInTime(LocalDate date, Clock clock) {
+    goToPointInTime(date.atStartOfDay(ZoneId.systemDefault()).toInstant(), clock);
+  }
+
+  private void goToPointInTime(Instant instant) {
+    goToPointInTime(instant, clock);
+  }
+
+  private void goToPointInTime(Instant instant, Clock clock) {
+    final Clock newClock = Clock.fixed(instant, ZoneId.systemDefault());
+    Mockito.doReturn(newClock.instant()).when(clock).instant();
+    Mockito.doReturn(newClock.getZone()).when(clock).getZone();
+  }
+
+  private LocalDate next(DayOfWeek dayOfWeek) {
+    return LocalDate.now(clock).with(TemporalAdjusters.next(dayOfWeek));
   }
 
   private List<User> generateUsersList(int count) {
@@ -269,28 +304,10 @@ class ScheduleServiceIntegrationTest {
   }
 
   private Schedule asScheduleRegistry(User user) {
-    return asScheduleRegistry(user, Clock.systemDefaultZone());
+    return asScheduleRegistry(user, clock);
   }
 
   private Schedule asScheduleRegistry(User user, Clock clock) {
     return Schedule.builder().user(user).scheduledAt(LocalDateTime.now(clock)).build();
-  }
-
-  private void goToPointInTime(DayOfWeek dayOfWeek) {
-    goToPointInTime(next(dayOfWeek));
-  }
-
-  private void goToPointInTime(LocalDate aTuesday) {
-    goToPointInTime(aTuesday.atStartOfDay(ZoneId.systemDefault()).toInstant());
-  }
-
-  private void goToPointInTime(Instant instant) {
-    final Clock newClock = Clock.fixed(instant, ZoneId.systemDefault());
-    Mockito.doReturn(newClock.instant()).when(clock).instant();
-    Mockito.doReturn(newClock.getZone()).when(clock).getZone();
-  }
-
-  private LocalDate next(DayOfWeek dayOfWeek) {
-    return LocalDate.now(clock).with(TemporalAdjusters.next(dayOfWeek));
   }
 }

@@ -10,9 +10,9 @@ import java.util.Optional;
 @Repository
 public interface ScheduleRepository
     extends JpaRepository<Schedule, Integer>, ScheduleRepositoryExtension {
-  Optional<Schedule> findFirstByOrderByScheduledAtDesc();
+  Optional<Schedule> findFirstByOrderByScheduledAtDescIdDesc();
 
   default Optional<Schedule> getLastSchedule() {
-    return findFirstByOrderByScheduledAtDesc();
+    return findFirstByOrderByScheduledAtDescIdDesc();
   }
 }
