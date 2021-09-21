@@ -17,6 +17,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -118,24 +119,25 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
           .collect(Collectors.toUnmodifiableList());
     }
 
-    LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
+    final List<User> users = userRepository.findAll(Sort.by(User.Fields.id));
 
-    final List<User> all = userRepository.findAll(Sort.by(User.Fields.id));
-    final var cycle = Iterators.cycle(all);
+    final Iterator<User> usersCyclicIterator = Iterators.cycle(users);
 
     final Optional<User> optionalLastScheduledUser = getLastScheduledUser();
 
     if (optionalLastScheduledUser.isPresent()) {
       final User lastScheduledUser = optionalLastScheduledUser.get();
 
-      while (!all.get(0).equals(lastScheduledUser)) {
-        cycle.next();
+      while (!lastScheduledUser.equals(users.get(0))) {
+        usersCyclicIterator.next();
       }
     }
 
-    boolean shouldReturnYesterdayScheduleEmpty = optionalLastScheduledUser.isEmpty();
+    final boolean shouldReturnYesterdayScheduleEmpty = optionalLastScheduledUser.isEmpty();
 
-    return getDateRange(yesterday, 11)
+    final LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
+
+    return getDateRange(yesterday, SCHEDULES_COUNT)
         .map(
             date -> {
               if (isWeekend(date)) {
@@ -144,7 +146,7 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
               if (date.equals(yesterday) && shouldReturnYesterdayScheduleEmpty) {
                 return Optional.<User>empty();
               }
-              return Optional.of(cycle.next());
+              return Optional.of(usersCyclicIterator.next());
             })
         .collect(Collectors.toUnmodifiableList());
   }
