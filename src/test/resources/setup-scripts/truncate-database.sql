@@ -1,0 +1,4 @@
+TRUNCATE users CASCADE;
+
+ALTER SEQUENCE schedule_id_seq RESTART;
+ALTER SEQUENCE users_id_seq RESTART;

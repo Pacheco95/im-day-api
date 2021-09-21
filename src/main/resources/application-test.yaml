@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:9999}/${DB_DATABASE:imday-test}?createDatabaseIfNotExist=true
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
