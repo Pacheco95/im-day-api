@@ -1,5 +1,6 @@
 package br.com.uol.imdayapi.model;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +20,8 @@ public class User {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @ApiModelProperty
   private Integer id;
 
-  private String name;
+  @ApiModelProperty private String name;
 }
