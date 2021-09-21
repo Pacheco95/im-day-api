@@ -128,8 +128,10 @@ public class ScheduleRepositoryExtensionImpl implements ScheduleRepositoryExtens
     if (optionalLastScheduledUser.isPresent()) {
       final User lastScheduledUser = optionalLastScheduledUser.get();
 
-      while (!lastScheduledUser.equals(users.get(0))) {
-        usersCyclicIterator.next();
+      while (true) {
+        if (usersCyclicIterator.next().equals(lastScheduledUser)) {
+          break;
+        }
       }
     }
 
