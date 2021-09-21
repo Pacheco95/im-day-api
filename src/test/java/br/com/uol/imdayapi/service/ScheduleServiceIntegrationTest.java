@@ -20,6 +20,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -28,6 +29,8 @@ import java.util.stream.Stream;
 
 import static br.com.uol.imdayapi.utils.DateTimeUtils.getDateRange;
 import static br.com.uol.imdayapi.utils.DateTimeUtils.isWeekend;
+import static java.time.DayOfWeek.MONDAY;
+import static java.time.DayOfWeek.TUESDAY;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -232,6 +235,21 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.getRecentScheduledUsers()).isEqualTo(expectedRecentScheduledUsers);
   }
 
+  @Test
+  void
+      givenAnAlreadyScheduledUserYesterdayAndOnlyOneUserInDatabase_thenGetRecentScheduledUsersShouldReturnThisUserInTheFirstArrayPosition() {
+    goToPointInTime(MONDAY);
+
+    final User luckyUser = generateUsersList(1).get(0);
+
+    entityManager.persist(luckyUser);
+    entityManager.persist(asScheduleRegistry(luckyUser, clock));
+
+    goToPointInTime(TUESDAY);
+
+    assertThat(scheduleService.getRecentScheduledUsers().get(0)).hasValue(luckyUser);
+  }
+
   private Instant startOfToday() {
     return LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
@@ -258,9 +276,21 @@ class ScheduleServiceIntegrationTest {
     return Schedule.builder().user(user).scheduledAt(LocalDateTime.now(clock)).build();
   }
 
+  private void goToPointInTime(DayOfWeek dayOfWeek) {
+    goToPointInTime(next(dayOfWeek));
+  }
+
+  private void goToPointInTime(LocalDate aTuesday) {
+    goToPointInTime(aTuesday.atStartOfDay(ZoneId.systemDefault()).toInstant());
+  }
+
   private void goToPointInTime(Instant instant) {
     final Clock newClock = Clock.fixed(instant, ZoneId.systemDefault());
     Mockito.doReturn(newClock.instant()).when(clock).instant();
     Mockito.doReturn(newClock.getZone()).when(clock).getZone();
+  }
+
+  private LocalDate next(DayOfWeek dayOfWeek) {
+    return LocalDate.now(clock).with(TemporalAdjusters.next(dayOfWeek));
   }
 }
