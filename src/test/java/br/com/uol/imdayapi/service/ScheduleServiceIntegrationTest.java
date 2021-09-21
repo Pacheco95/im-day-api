@@ -6,10 +6,13 @@ import br.com.uol.imdayapi.model.User;
 import br.com.uol.imdayapi.repository.ScheduleRepository;
 import br.com.uol.imdayapi.utils.DateTimeUtils;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -21,6 +24,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -246,6 +250,36 @@ class ScheduleServiceIntegrationTest {
     assertThat(scheduleService.getRecentScheduledUsers().get(0)).hasValue(luckyUser);
   }
 
+  @ParameterizedTest
+  @EnumSource(DayOfWeek.class)
+  void
+      givenNoPreviousSchedulesAndMoreThanOneUserInDatabase_thenGetRecentScheduledUsersShouldCycleUsersInWeekdaysExceptYesterday(
+          DayOfWeek dayOfWeek) {
+
+    final LocalDate today = LocalDate.ofInstant(goToPointInTime(dayOfWeek), ZoneId.systemDefault());
+
+    final List<User> users = generateUsersList(5);
+
+    users.forEach(entityManager::persist);
+
+    final Iterator<User> usersCyclicIterator = Iterators.cycle(users);
+
+    final LocalDate yesterday = today.minus(1, ChronoUnit.DAYS);
+
+    final var expectedRecentScheduledUsers =
+        getDateRange(yesterday, 11)
+            .map(
+                date -> {
+                  if (isWeekend(date) || date.equals(yesterday)) {
+                    return Optional.empty();
+                  }
+                  return Optional.of(usersCyclicIterator.next());
+                })
+            .collect(Collectors.toUnmodifiableList());
+
+    assertThat(scheduleService.getRecentScheduledUsers()).isEqualTo(expectedRecentScheduledUsers);
+  }
+
   private Instant startOfTodaySystem() {
     return startOfToday(Clock.systemDefaultZone());
   }
@@ -270,26 +304,27 @@ class ScheduleServiceIntegrationTest {
     return yesterday(clock).atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
 
-  private void goToPointInTime(DayOfWeek dayOfWeek) {
-    goToPointInTime(dayOfWeek, clock);
+  private Instant goToPointInTime(DayOfWeek dayOfWeek) {
+    return goToPointInTime(dayOfWeek, clock);
   }
 
-  private void goToPointInTime(DayOfWeek dayOfWeek, Clock clock) {
-    goToPointInTime(next(dayOfWeek), clock);
+  private Instant goToPointInTime(DayOfWeek dayOfWeek, Clock clock) {
+    return goToPointInTime(next(dayOfWeek), clock);
   }
 
-  private void goToPointInTime(LocalDate date, Clock clock) {
-    goToPointInTime(date.atStartOfDay(ZoneId.systemDefault()).toInstant(), clock);
+  private Instant goToPointInTime(LocalDate date, Clock clock) {
+    return goToPointInTime(date.atStartOfDay(ZoneId.systemDefault()).toInstant(), clock);
   }
 
   private void goToPointInTime(Instant instant) {
     goToPointInTime(instant, clock);
   }
 
-  private void goToPointInTime(Instant instant, Clock clock) {
+  private Instant goToPointInTime(Instant instant, Clock clock) {
     final Clock newClock = Clock.fixed(instant, ZoneId.systemDefault());
     Mockito.doReturn(newClock.instant()).when(clock).instant();
     Mockito.doReturn(newClock.getZone()).when(clock).getZone();
+    return instant;
   }
 
   private LocalDate next(DayOfWeek dayOfWeek) {
