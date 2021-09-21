@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static br.com.uol.imdayapi.utils.DateTimeUtils.getDateRange;
+import static br.com.uol.imdayapi.utils.DateTimeUtils.isWeekend;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -212,6 +213,23 @@ class ScheduleServiceIntegrationTest {
             .collect(Collectors.toUnmodifiableList());
 
     assertThat(weekendsBool).isEqualTo(scheduledUsersBool);
+  }
+
+  @Test
+  void
+      givenOnlyOneUserInDatabase_thenGetRecentScheduledUsersShouldReturnTheSameUserToAllCorrespondingWeekdaysSinceYesterdayOtherwiseEmpty() {
+    final User luckyUser = generateUsersList(1).get(0);
+
+    entityManager.persist(luckyUser);
+
+    final LocalDate yesterday = LocalDate.now(clock).minus(1, ChronoUnit.DAYS);
+
+    final List<Optional<User>> expectedRecentScheduledUsers =
+        getDateRange(yesterday, 11)
+            .map(date -> Optional.ofNullable(isWeekend(date) ? null : luckyUser))
+            .collect(Collectors.toUnmodifiableList());
+
+    assertThat(scheduleService.getRecentScheduledUsers()).isEqualTo(expectedRecentScheduledUsers);
   }
 
   private Instant startOfToday() {
